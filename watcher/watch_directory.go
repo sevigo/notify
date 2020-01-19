@@ -159,7 +159,7 @@ func fileDebug(lvl string, msg string) {
 // CreateFileAddedNotification creates a notifaction
 func (w *DirectoryWatcher) CreateFileAddedNotification(watchDirectoryPath, relativeFilePath string) {
 	absoluteFilePath := filepath.Join(watchDirectoryPath, relativeFilePath)
-	fi, err := file.GetFileInformation(absoluteFilePath)
+	fi, err := util.GetFileInformation(absoluteFilePath)
 
 	if err != nil {
 		fileError("WARN", err)
@@ -170,13 +170,6 @@ func (w *DirectoryWatcher) CreateFileAddedNotification(watchDirectoryPath, relat
 }
 
 func fileChangeNotifier(absoluteFilePath string, action event.ActionType) {
-
-	// if watcher.Options.IgnoreDirectoies && fileInfo.IsDir() {
-	// 	fileDebug("DEBUG", fmt.Sprintf("file change for a directory [%s] is filtered", relativeFilePath))
-	// 	return
-	// }
-	// absoluteFilePath := filepath.Join(watchDirectoryPath, relativeFilePath)
-
 	for _, fileFilter := range watcher.Options.FileFilters {
 		if strings.Contains(absoluteFilePath, fileFilter) {
 			fileDebug("DEBUG", fmt.Sprintf("file [%s] is filtered", fileFilter))
