@@ -165,11 +165,6 @@ void WatchDirectory(char *dir)
 				FALSE);			 // does not wait
 
 			char fileName[MAX_PATH] = "";
-			// FILE_ACTION_ADDED=0x00000001: The file was added to the directory.
-			// FILE_ACTION_REMOVED=0x00000002: The file was removed from the directory.
-			// FILE_ACTION_MODIFIED=0x00000003: The file was modified. This can be a change in the time stamp or attributes.
-			// FILE_ACTION_RENAMED_OLD_NAME=0x00000004: The file was renamed and this is the old name.
-			// FILE_ACTION_RENAMED_NEW_NAME=0x00000005: The file was renamed and this is the new name.
 
 			FILE_NOTIFY_INFORMATION *fni = NULL;
 			DWORD offset = 0;
@@ -184,7 +179,14 @@ void WatchDirectory(char *dir)
 				}
 
 				wcstombs_s(&count, fileName, sizeof(fileName), fni->FileName, (size_t)fni->FileNameLength / sizeof(WCHAR));
-				// printf("[CGO] [INFO] file=[%s] action=[%d] offset=[%ld]\n", fileName, fni->Action, offset);
+
+				// FILE_ACTION_ADDED=0x00000001: The file was added to the directory.
+				// FILE_ACTION_REMOVED=0x00000002: The file was removed from the directory.
+				// FILE_ACTION_MODIFIED=0x00000003: The file was modified. This can be a change in the time stamp or attributes.
+				// FILE_ACTION_RENAMED_OLD_NAME=0x00000004: The file was renamed and this is the old name.
+				// FILE_ACTION_RENAMED_NEW_NAME=0x00000005: The file was renamed and this is the new name.
+				// printf("[CGO] [INFO] file=[%s] action=[%d]\n", fileName, fni->Action);
+
 				goCallbackFileChange(dir, fileName, fni->Action);
 				memset(fileName, '\0', sizeof(fileName));
 				offset += fni->NextEntryOffset;

@@ -42,11 +42,8 @@ func TestNotificationWaiter_RegisterFileNotification(t *testing.T) {
 				path: "/foo/bar/test.txt",
 			},
 			fileData: &Event{
-				Action:             ActionType(1),
-				AbsolutePath:       "/foo/bar/test.txt",
-				RelativePath:       "bar/test.txt",
-				WatchDirectoryName: "foo",
-				DirectoryPath:      "/foo",
+				Action: ActionType(1),
+				Path:   "/foo/bar/test.txt",
 			},
 			notificationExpected: true,
 		},
@@ -61,11 +58,8 @@ func TestNotificationWaiter_RegisterFileNotification(t *testing.T) {
 				path: "/foo/bar/test.txt",
 			},
 			fileData: &Event{
-				Action:             ActionType(1),
-				AbsolutePath:       "/foo/bar/test.txt",
-				RelativePath:       "bar/test.txt",
-				WatchDirectoryName: "foo",
-				DirectoryPath:      "/foo",
+				Action: ActionType(1),
+				Path:   "/foo/bar/test.txt",
 			},
 			notificationExpected: false,
 		},
@@ -92,8 +86,8 @@ func TestNotificationWaiter_RegisterFileNotification(t *testing.T) {
 			waitChan <- true
 			if tt.notificationExpected {
 				file := <-tt.fields.EventCh
-				if file.AbsolutePath != tt.fileData.AbsolutePath {
-					t.Errorf("FileChangeNotification: got AbsolutePath=%s, want %s", file.AbsolutePath, tt.fileData.AbsolutePath)
+				if file.Path != tt.fileData.Path {
+					t.Errorf("FileChangeNotification: got AbsolutePath=%s, want %s", file.Path, tt.fileData.Path)
 				}
 			}
 

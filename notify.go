@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/sevigo/notify/event"
+	"github.com/sevigo/notify/watcher"
 )
 
 // Watch ...
@@ -14,23 +15,22 @@ type Watch struct {
 	Events chan event.Event
 	Errors chan event.Error
 
-	watcher *DirectoryWatcher
+	watcher *watcher.DirectoryWatcher
 }
 
 // Setup returns a channel for file change notifications and errors
-func Setup(ctx context.Context, options *Options) *Watch {
+func Setup(ctx context.Context, options *watcher.Options) *Watch {
 	eventCh := make(chan event.Event)
 	errorCh := make(chan event.Error)
 	if options == nil {
-		options = &Options{IgnoreDirectoies: true}
+		options = &watcher.Options{Rescan: true}
 	}
 
-	watcher := Create(ctx, eventCh, errorCh, options)
 	w := &Watch{
 		ctx:     ctx,
 		Errors:  errorCh,
 		Events:  eventCh,
-		watcher: watcher,
+		watcher: watcher.Create(ctx, eventCh, errorCh, options),
 	}
 
 	return w

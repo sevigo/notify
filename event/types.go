@@ -1,11 +1,5 @@
 package event
 
-import (
-	"time"
-
-	"github.com/google/uuid"
-)
-
 // ActionType represents what happens with the file
 type ActionType int
 
@@ -14,20 +8,8 @@ type MetaInfo map[string]string
 
 // Event ...
 type Event struct {
-	Action             ActionType
-	MimeType           string
-	Machine            string
-	FileName           string
-	AbsolutePath       string
-	Path               string
-	RelativePath       string
-	DirectoryPath      string
-	WatchDirectoryName string
-	Size               int64
-	Timestamp          time.Time
-	UUID               uuid.UUID
-	Checksum           string
-	MetaInfo           *MetaInfo
+	Action ActionType
+	Path   string
 }
 
 const (

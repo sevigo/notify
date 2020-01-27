@@ -47,6 +47,10 @@ func (w *DirectoryWatcher) StartWatching(path string) {
 		}
 	}()
 
+	if w.Options.Rescan {
+		w.Scan(path)
+	}
+
 	C.WatchDirectory(cpath)
 	fileDebug("INFO", fmt.Sprintf("[%s] is not watched anymore", path))
 }
@@ -58,12 +62,18 @@ func goCallbackFileChange(cpath, cfile *C.char, caction C.int) {
 	action := event.ActionType(int(caction))
 
 	absoluteFilePath := filepath.Join(path, file)
-	// fi, err := fileinfo.GetFileInformation(absoluteFilePath)
 
-	// if err != nil {
-	// 	fileError("WARN", err)
-	// 	return
-	// }
+	if ok := checkValidFile(absoluteFilePath, action); ok {
+		fileChangeNotifier(absoluteFilePath, action)
+	}
+}
 
-	fileChangeNotifier(absoluteFilePath, action)
+func checkValidFile(absoluteFilePath string, action event.ActionType) bool {
+	// if the file is removed we are good and the event is valid
+	if action == event.FileRemoved {
+		return true
+	}
+	//we are checking this because windows tend to create some tmp files if this is a download files
+	_, err := os.Stat(absoluteFilePath)
+	return err == nil
 }

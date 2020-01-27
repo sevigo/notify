@@ -53,9 +53,9 @@ func (w *Waiter) LookupForFileNotification(path string) (chan bool, bool) {
 // received on waitChan.
 // TODO: this can be done better with a general type of channel and any data
 func (w *Waiter) Wait(fileData *Event) {
-	waitChan, exists := w.LookupForFileNotification(fileData.AbsolutePath)
+	waitChan, exists := w.LookupForFileNotification(fileData.Path)
 	if !exists {
-		w.ErrorCh <- FormatError("ERROR", fmt.Sprintf("no notification if registered for the path %s", fileData.AbsolutePath))
+		w.ErrorCh <- FormatError("ERROR", fmt.Sprintf("no notification if registered for the path %s", fileData.Path))
 		return
 	}
 	cnt := 0
@@ -64,14 +64,14 @@ func (w *Waiter) Wait(fileData *Event) {
 		case <-waitChan:
 			cnt++
 			if cnt == w.MaxCount {
-				w.ErrorCh <- FormatError("ERROR", fmt.Sprintf("exit after %d times of notification for [%s]", w.MaxCount, fileData.AbsolutePath))
-				w.UnregisterFileNotification(fileData.AbsolutePath)
+				w.ErrorCh <- FormatError("ERROR", fmt.Sprintf("exit after %d times of notification for [%s]", w.MaxCount, fileData.Path))
+				w.UnregisterFileNotification(fileData.Path)
 				close(waitChan)
 				return
 			}
 		case <-time.After(w.Timeout):
 			w.EventCh <- *fileData
-			w.UnregisterFileNotification(fileData.AbsolutePath)
+			w.UnregisterFileNotification(fileData.Path)
 			close(waitChan)
 			return
 		}

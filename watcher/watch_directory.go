@@ -5,14 +5,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/sevigo/notify/event"
-	"github.com/sevigo/notify/util"
 )
 
 // ActionToString maps Action value to string
@@ -55,6 +51,7 @@ type Options struct {
 	ActionFilters    []event.ActionType
 	FileFilters      []string
 	IgnoreDirectoies bool
+	Rescan           bool
 }
 
 // Callback holds information about watcher channels
@@ -100,8 +97,8 @@ func Create(ctx context.Context, callbackCh chan event.Event, errorCh chan event
 			Errors:  errorCh,
 			NotificationWaiter: event.Waiter{
 				EventCh:  callbackCh,
-				Timeout:  time.Duration(5 * time.Second),
-				MaxCount: 10,
+				Timeout:  1 * time.Second,
+				MaxCount: 5,
 			},
 		}
 	})
@@ -114,11 +111,7 @@ func (w *DirectoryWatcher) Scan(path string) error {
 			return err
 		}
 		if !fileInfo.IsDir() {
-			relativePath, err := filepath.Rel(path, absoluteFilePath)
-			if err != nil {
-				return err
-			}
-			w.CreateFileAddedNotification(path, relativePath)
+			fileChangeNotifier(absoluteFilePath, event.FileAdded)
 		}
 		return nil
 	})
@@ -156,27 +149,7 @@ func fileDebug(lvl string, msg string) {
 	watcher.Errors <- event.FormatError(lvl, msg)
 }
 
-// CreateFileAddedNotification creates a notifaction
-func (w *DirectoryWatcher) CreateFileAddedNotification(watchDirectoryPath, relativeFilePath string) {
-	absoluteFilePath := filepath.Join(watchDirectoryPath, relativeFilePath)
-	fi, err := util.GetFileInformation(absoluteFilePath)
-
-	if err != nil {
-		fileError("WARN", err)
-		return
-	}
-
-	fileChangeNotifier(absoluteFilePath, event.FileAdded)
-}
-
 func fileChangeNotifier(absoluteFilePath string, action event.ActionType) {
-	for _, fileFilter := range watcher.Options.FileFilters {
-		if strings.Contains(absoluteFilePath, fileFilter) {
-			fileDebug("DEBUG", fmt.Sprintf("file [%s] is filtered", fileFilter))
-			return
-		}
-	}
-
 	for _, actionFilter := range watcher.ActionFilters {
 		if action == actionFilter {
 			fileDebug("DEBUG", fmt.Sprintf("action [%s] is filtered\n", ActionToString(actionFilter)))
@@ -191,29 +164,11 @@ func fileChangeNotifier(absoluteFilePath string, action event.ActionType) {
 		wait <- true
 		return
 	}
-
 	watcher.NotificationWaiter.RegisterFileNotification(absoluteFilePath)
 
-	host, _ := os.Hostname()
-	mimeType, err := util.ContentType(absoluteFilePath)
-	if err != nil {
-		fileError("WARNING", fmt.Errorf("can't get ContentType from the file [%s]: %v", absoluteFilePath, err))
-		watcher.NotificationWaiter.UnregisterFileNotification(absoluteFilePath)
-		return
-	}
-	checksum, err := util.Checksum(absoluteFilePath)
-	if err != nil {
-		fileError("WARNING", fmt.Errorf("can't get Checksum from the file [%s]: %v", absoluteFilePath, err))
-		watcher.NotificationWaiter.UnregisterFileNotification(absoluteFilePath)
-		return
-	}
-
 	data := &event.Event{
-		UUID:     uuid.New(),
-		MimeType: mimeType,
-		Checksum: checksum,
-		Path:     absoluteFilePath,
-		Action:   action,
+		Path:   absoluteFilePath,
+		Action: action,
 	}
 
 	go watcher.NotificationWaiter.Wait(data)
