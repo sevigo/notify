@@ -109,9 +109,7 @@ func (w *DirectoryWatcher) Error() chan event.Error {
 }
 
 func (w *DirectoryWatcher) Scan(path string) error {
-	fmt.Printf("Scan: absoluteFilePath(): path=%s\n", path)
 	return filepath.Walk(path, func(absoluteFilePath string, fileInfo os.FileInfo, err error) error {
-		fmt.Printf("Scan: absoluteFilePath(): %s\n", absoluteFilePath)
 		if err != nil {
 			return err
 		}
