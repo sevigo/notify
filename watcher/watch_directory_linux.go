@@ -73,7 +73,6 @@ func watchDir(rootDirToWatch string, subDir string) {
 
 //export goCallbackFileChange
 func goCallbackFileChange(croot, cpath, cfile *C.char, caction C.int) {
-	root := strings.TrimSpace(C.GoString(croot))
 	path := strings.TrimSpace(C.GoString(cpath))
 	file := strings.TrimSpace(C.GoString(cfile))
 	action := convertMaskToAction(int(caction))
