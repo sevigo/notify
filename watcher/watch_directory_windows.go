@@ -1,4 +1,4 @@
-// +build windows,!integration
+// +build windows,!integration,!fake
 
 package watcher
 

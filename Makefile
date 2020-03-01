@@ -11,3 +11,4 @@ mockgen: install-mockgen
 
 test:
 	go test -timeout 10s -v -cover ./...
+	CGO_ENABLED=0 go test -timeout 10s -tags fake -v
