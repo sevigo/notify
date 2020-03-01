@@ -11,7 +11,6 @@ import (
 	"strings"
 	"unsafe"
 
-	// fileinfo "github.com/bakkuappu/helium/pkg/util"
 	"github.com/sevigo/notify/event"
 )
 
@@ -30,8 +29,8 @@ func (w *DirectoryWatcher) StartWatching(path string) {
 		fileDebug("INFO", fmt.Sprintf("directory [%s] is already watched", path))
 		return
 	}
-	ch := RegisterCallback(path)
 
+	ch := RegisterCallback(path)
 	fileDebug("INFO", fmt.Sprintf("start watching [%s]\n", path))
 	cpath := C.CString(path)
 	defer func() {
@@ -47,8 +46,12 @@ func (w *DirectoryWatcher) StartWatching(path string) {
 		}
 	}()
 
-	if w.Options.Rescan {
-		w.Scan(path)
+	if w.options.Rescan {
+		err := w.Scan(path)
+		if err != nil {
+			fileError("CRITICAL", err)
+			return
+		}
 	}
 
 	C.WatchDirectory(cpath)

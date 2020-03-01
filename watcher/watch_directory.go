@@ -29,21 +29,13 @@ func ActionToString(action event.ActionType) string {
 
 // DirectoryWatcher ...
 type DirectoryWatcher struct {
-	ActionFilters []event.ActionType
-	FileFilters   []string
-	Options       *Options
-	Events        chan event.Event
-	Errors        chan event.Error
-	StopWatchCh   chan string
+	actionFilters []event.ActionType
+	fileFilters   []string
+	options       *Options
+	events        chan event.Event
+	errors        chan event.Error
 
-	NotificationWaiter event.Waiter
-}
-
-// DirectoryWatcherImplementer ...
-type DirectoryWatcherImplementer interface {
-	Scan(path string) error
-	StartWatching(path string)
-	StopWatching(path string)
+	event.Waiter
 }
 
 // Options ...
@@ -92,10 +84,13 @@ func Create(ctx context.Context, callbackCh chan event.Event, errorCh chan event
 	once.Do(func() {
 		go processContext(ctx)
 		watcher = &DirectoryWatcher{
-			Options: options,
-			Events:  callbackCh,
-			Errors:  errorCh,
-			NotificationWaiter: event.Waiter{
+			options:       options,
+			actionFilters: options.ActionFilters,
+			fileFilters:   options.FileFilters,
+			events:        callbackCh,
+			errors:        errorCh,
+
+			Waiter: event.Waiter{
 				EventCh:  callbackCh,
 				Timeout:  1 * time.Second,
 				MaxCount: 5,
@@ -105,8 +100,18 @@ func Create(ctx context.Context, callbackCh chan event.Event, errorCh chan event
 	return watcher
 }
 
+func (w *DirectoryWatcher) Event() chan event.Event {
+	return w.events
+}
+
+func (w *DirectoryWatcher) Error() chan event.Error {
+	return w.errors
+}
+
 func (w *DirectoryWatcher) Scan(path string) error {
+	fmt.Printf("Scan: absoluteFilePath(): path=%s\n", path)
 	return filepath.Walk(path, func(absoluteFilePath string, fileInfo os.FileInfo, err error) error {
+		fmt.Printf("Scan: absoluteFilePath(): %s\n", absoluteFilePath)
 		if err != nil {
 			return err
 		}
@@ -141,16 +146,16 @@ func (w *DirectoryWatcher) StopWatching(watchDirectoryPath string) {
 
 func fileError(lvl string, err error) {
 	// TODO: we can print out here if it is configured
-	watcher.Errors <- event.FormatError(lvl, err.Error())
+	watcher.errors <- event.FormatError(lvl, err.Error())
 }
 
 func fileDebug(lvl string, msg string) {
 	// TODO: we can print out here if it is configured
-	watcher.Errors <- event.FormatError(lvl, msg)
+	watcher.errors <- event.FormatError(lvl, msg)
 }
 
 func fileChangeNotifier(absoluteFilePath string, action event.ActionType) {
-	for _, actionFilter := range watcher.ActionFilters {
+	for _, actionFilter := range watcher.actionFilters {
 		if action == actionFilter {
 			fileDebug("DEBUG", fmt.Sprintf("action [%s] is filtered\n", ActionToString(actionFilter)))
 			return
@@ -159,17 +164,17 @@ func fileChangeNotifier(absoluteFilePath string, action event.ActionType) {
 
 	fileDebug("DEBUG", fmt.Sprintf("file [%s], action [%s]\n", absoluteFilePath, ActionToString(action)))
 	// notification event is registered for this path, wait for 5 secs
-	wait, exists := watcher.NotificationWaiter.LookupForFileNotification(absoluteFilePath)
+	wait, exists := watcher.LookupForFileNotification(absoluteFilePath)
 	if exists {
 		wait <- true
 		return
 	}
-	watcher.NotificationWaiter.RegisterFileNotification(absoluteFilePath)
+	watcher.RegisterFileNotification(absoluteFilePath)
 
 	data := &event.Event{
 		Path:   absoluteFilePath,
 		Action: action,
 	}
 
-	go watcher.NotificationWaiter.Wait(data)
+	go watcher.Wait(data)
 }
