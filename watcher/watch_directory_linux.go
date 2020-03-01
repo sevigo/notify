@@ -1,4 +1,4 @@
-// +build linux,!integration
+// +build linux,!integration,!fake
 
 package watcher
 
