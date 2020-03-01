@@ -12,8 +12,7 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/bakkuappu/helium/pkg/notification"
-	fileinfo "github.com/bakkuappu/helium/pkg/util"
+	"github.com/sevigo/notify/event"
 )
 
 // #define IN_ACCESS		0x00000001	/* File was accessed */
@@ -27,20 +26,20 @@ import (
 // #define IN_CREATE		0x00000100	/* Subfile was created */
 // #define IN_DELETE		0x00000200	/* Subfile was deleted */
 // #define IN_DELETE_SELF	0x00000400	/* Self was deleted */
-func convertMaskToAction(mask int) notification.ActionType {
+func convertMaskToAction(mask int) event.ActionType {
 	switch mask {
 	case 2, 8: // File was modified
-		return notification.ActionType(notification.FileModified)
+		return event.ActionType(event.FileModified)
 	case 256: // Subfile was created
-		return notification.ActionType(notification.FileAdded)
+		return event.ActionType(event.FileAdded)
 	case 512: // Subfile was deleted
-		return notification.ActionType(notification.FileRemoved)
+		return event.ActionType(event.FileRemoved)
 	case 64: // File was moved from X
-		return notification.ActionType(notification.FileRenamedOldName)
+		return event.ActionType(event.FileRenamedOldName)
 	case 128: // File was moved to Y
-		return notification.ActionType(notification.FileRenamedNewName)
+		return event.ActionType(event.FileRenamedNewName)
 	default:
-		return notification.ActionType(notification.Invalid)
+		return event.ActionType(event.Invalid)
 	}
 }
 
@@ -78,19 +77,6 @@ func goCallbackFileChange(croot, cpath, cfile *C.char, caction C.int) {
 	path := strings.TrimSpace(C.GoString(cpath))
 	file := strings.TrimSpace(C.GoString(cfile))
 	action := convertMaskToAction(int(caction))
-
 	absoluteFilePath := filepath.Join(path, file)
-	relativeFilePath, err := filepath.Rel(root, absoluteFilePath)
-	if err != nil {
-		fileError("ERROR", err)
-		return
-	}
-
-	fi, err := fileinfo.GetFileInformation(absoluteFilePath)
-	if err != nil {
-		fileError("WARN", err)
-		return
-	}
-
-	fileChangeNotifier(root, relativeFilePath, fi, action, nil)
+	fileChangeNotifier(absoluteFilePath, action)
 }
