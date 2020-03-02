@@ -6,6 +6,7 @@ package mocks
 
 import (
 	gomock "github.com/golang/mock/gomock"
+	core "github.com/sevigo/notify/core"
 	event "github.com/sevigo/notify/event"
 	reflect "reflect"
 )
@@ -76,15 +77,15 @@ func (mr *MockDirectoryWatcherMockRecorder) Scan(arg0 interface{}) *gomock.Call 
 }
 
 // StartWatching mocks base method
-func (m *MockDirectoryWatcher) StartWatching(arg0 string) {
+func (m *MockDirectoryWatcher) StartWatching(arg0 string, arg1 *core.WatchingOptions) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "StartWatching", arg0)
+	m.ctrl.Call(m, "StartWatching", arg0, arg1)
 }
 
 // StartWatching indicates an expected call of StartWatching
-func (mr *MockDirectoryWatcherMockRecorder) StartWatching(arg0 interface{}) *gomock.Call {
+func (mr *MockDirectoryWatcherMockRecorder) StartWatching(arg0, arg1 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartWatching", reflect.TypeOf((*MockDirectoryWatcher)(nil).StartWatching), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "StartWatching", reflect.TypeOf((*MockDirectoryWatcher)(nil).StartWatching), arg0, arg1)
 }
 
 // StopWatching mocks base method

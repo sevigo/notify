@@ -8,7 +8,7 @@ import (
 	"github.com/sevigo/notify/event"
 )
 
-func (i *DirectoryWatcher) StartWatching(root string) {
+func (i *DirectoryWatcher) StartWatching(root string, _ *core.WatchingOptions) {
 	time.Sleep(time.Second)
 	fileChangeNotifier(root+"/test.txt", event.FileAdded)
 }

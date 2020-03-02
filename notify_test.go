@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sevigo/notify/core"
 	"github.com/sevigo/notify/event"
 	"github.com/sevigo/notify/watcher"
 )
@@ -32,7 +33,7 @@ func TestSetup(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := Setup(context.TODO(), tt.options)
-			go w.StartWatching(tt.path)
+			go w.StartWatching(tt.path, core.WatchingOptions{})
 			go func() {
 				<-w.Error()
 			}()

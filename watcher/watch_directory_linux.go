@@ -12,6 +12,7 @@ import (
 	"strings"
 	"unsafe"
 
+	"github.com/sevigo/notify/core"
 	"github.com/sevigo/notify/event"
 )
 
@@ -44,7 +45,7 @@ func convertMaskToAction(mask int) event.ActionType {
 }
 
 // StartWatching starts a CGO function for getting the notifications
-func (w *DirectoryWatcher) StartWatching(root string) {
+func (w *DirectoryWatcher) StartWatching(root string, options *core.WatchingOptions) {
 	if _, err := os.Stat(root); os.IsNotExist(err) {
 		fileError("CRITICAL", fmt.Errorf("cannot start watching [%s]: no such directory", root))
 		return
@@ -56,7 +57,7 @@ func (w *DirectoryWatcher) StartWatching(root string) {
 		}
 		return nil
 	})
-	if w.options.Rescan {
+	if options.Rescan {
 		err := w.Scan(root)
 		if err != nil {
 			fileError("CRITICAL", err)
