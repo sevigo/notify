@@ -12,9 +12,6 @@ import (
 func Setup(ctx context.Context, options *watcher.Options) core.DirectoryWatcher {
 	eventCh := make(chan event.Event)
 	errorCh := make(chan event.Error)
-	if options == nil {
-		options = &watcher.Options{Rescan: true}
-	}
 
 	return watcher.Create(ctx, eventCh, errorCh, options)
 }
