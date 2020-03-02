@@ -5,6 +5,7 @@ package watcher
 import (
 	"time"
 
+	"github.com/sevigo/notify/core"
 	"github.com/sevigo/notify/event"
 )
 
