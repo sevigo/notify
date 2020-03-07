@@ -47,7 +47,7 @@ func (w *DirectoryWatcher) StartWatching(path string) {
 	}()
 
 	if w.options.Rescan {
-		err := w.Scan(path)
+		err := w.scan(path)
 		if err != nil {
 			fileError("CRITICAL", err)
 			return

@@ -108,7 +108,7 @@ func (w *DirectoryWatcher) Error() chan event.Error {
 	return w.errors
 }
 
-func (w *DirectoryWatcher) Scan(path string) error {
+func (w *DirectoryWatcher) scan(path string) error {
 	return filepath.Walk(path, func(absoluteFilePath string, fileInfo os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -118,6 +118,15 @@ func (w *DirectoryWatcher) Scan(path string) error {
 		}
 		return nil
 	})
+}
+
+func (w *DirectoryWatcher) RescanAll() {
+	for path := range watchersCallback {
+		err := w.scan(path)
+		if err != nil {
+			fileError("CRITICAL", fmt.Errorf("cannot scan directory [%s]", path))
+		}
+	}
 }
 
 func processContext(ctx context.Context) {

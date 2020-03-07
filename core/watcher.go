@@ -6,7 +6,7 @@ import "github.com/sevigo/notify/event"
 type DirectoryWatcher interface {
 	Event() chan event.Event
 	Error() chan event.Error
-	Scan(path string) error
+	RescanAll()
 	StartWatching(path string)
 	StopWatching(path string)
 }
