@@ -29,21 +29,14 @@ func ActionToString(action event.ActionType) string {
 
 // DirectoryWatcher ...
 type DirectoryWatcher struct {
-	actionFilters []event.ActionType
-	fileFilters   []string
-	options       *Options
-	events        chan event.Event
-	errors        chan event.Error
+	events chan event.Event
+	errors chan event.Error
 
 	event.Waiter
 }
 
 // Options ...
 type Options struct {
-	ActionFilters    []event.ActionType
-	FileFilters      []string
-	IgnoreDirectoies bool
-	Rescan           bool
 }
 
 // Callback holds information about watcher channels
@@ -84,11 +77,8 @@ func Create(ctx context.Context, callbackCh chan event.Event, errorCh chan event
 	once.Do(func() {
 		go processContext(ctx)
 		watcher = &DirectoryWatcher{
-			options:       options,
-			actionFilters: options.ActionFilters,
-			fileFilters:   options.FileFilters,
-			events:        callbackCh,
-			errors:        errorCh,
+			events: callbackCh,
+			errors: errorCh,
 
 			Waiter: event.Waiter{
 				EventCh:  callbackCh,
@@ -162,13 +152,6 @@ func fileDebug(lvl string, msg string) {
 }
 
 func fileChangeNotifier(absoluteFilePath string, action event.ActionType) {
-	for _, actionFilter := range watcher.actionFilters {
-		if action == actionFilter {
-			fileDebug("DEBUG", fmt.Sprintf("action [%s] is filtered\n", ActionToString(actionFilter)))
-			return
-		}
-	}
-
 	fileDebug("DEBUG", fmt.Sprintf("file [%s], action [%s]\n", absoluteFilePath, ActionToString(action)))
 	// notification event is registered for this path, wait for 5 secs
 	wait, exists := watcher.LookupForFileNotification(absoluteFilePath)

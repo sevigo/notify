@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/sevigo/notify"
+	"github.com/sevigo/notify/core"
 	"github.com/sevigo/notify/watcher"
 )
 
@@ -27,15 +28,12 @@ func main() {
 		panic("not supported OS")
 	}
 
-	w := notify.Setup(
-		ctx,
-		&watcher.Options{
-			Rescan:      true,
-			FileFilters: []string{".crdownload", ".lock", ".snapshot"},
-		})
+	w := notify.Setup(ctx, &watcher.Options{})
 
 	for _, dir := range dirs {
-		go w.StartWatching(dir)
+		go w.StartWatching(dir, &core.WatchingOptions{
+			Rescan: true,
+		})
 	}
 	defer func() {
 		for _, dir := range dirs {
