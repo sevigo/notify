@@ -12,7 +12,7 @@ type WatchingOptions struct {
 type DirectoryWatcher interface {
 	Event() chan event.Event
 	Error() chan event.Error
-	Scan(path string) error
+	RescanAll()
 	StartWatching(path string, options *WatchingOptions)
 	StopWatching(path string)
 }
