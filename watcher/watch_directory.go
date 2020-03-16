@@ -99,6 +99,7 @@ func (w *DirectoryWatcher) Error() chan event.Error {
 }
 
 func (w *DirectoryWatcher) scan(path string) error {
+	fileDebug("DEBUG", fmt.Sprintf("scan(): %q", path))
 	return filepath.Walk(path, func(absoluteFilePath string, fileInfo os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -111,6 +112,7 @@ func (w *DirectoryWatcher) scan(path string) error {
 }
 
 func (w *DirectoryWatcher) RescanAll() {
+	fileDebug("DEBUG", "RescanAll(): event triggerd")
 	for path := range watchersCallback {
 		err := w.scan(path)
 		if err != nil {
