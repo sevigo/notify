@@ -32,7 +32,7 @@ func (w *DirectoryWatcher) StartWatching(path string, options *core.WatchingOpti
 	}
 
 	ch := RegisterCallback(path)
-	fileDebug("INFO", fmt.Sprintf("start watching [%s]\n", path))
+	fileDebug("INFO", fmt.Sprintf("start watching [%s]", path))
 	cpath := C.CString(path)
 	defer func() {
 		UnregisterCallback(path)

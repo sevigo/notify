@@ -50,13 +50,28 @@ func (w *DirectoryWatcher) StartWatching(root string, options *core.WatchingOpti
 		fileError("CRITICAL", fmt.Errorf("cannot start watching [%s]: no such directory", root))
 		return
 	}
-	log.Printf("linux.StartWatching(): for [%s]\n", root)
+	log.Printf("linux.StartWatching(): for [%s]", root)
 	err := filepath.Walk(root, func(path string, f os.FileInfo, err error) error {
 		if f.IsDir() {
+			_, found := LookupForCallback(path)
+			if found {
+				fileDebug("INFO", fmt.Sprintf("directory [%s] is already watched", path))
+				return
+			}
+
+			ch := RegisterCallback(path)
+			fileDebug("INFO", fmt.Sprintf("start watching [%s]", path))
+			cpath := C.CString(path)
+			defer func() {
+				UnregisterCallback(path)
+				C.free(unsafe.Pointer(cpath))
+			}()
+
 			go watchDir(root, path)
 		}
 		return nil
 	})
+
 	if options.Rescan {
 		err := w.scan(root)
 		if err != nil {
