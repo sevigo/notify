@@ -29,7 +29,7 @@ void WatchDirectory(char* root, char* dir) {
 		exit(-1);
 	}
 
-  	printf("[CGO] [INFO] WatchDirectory(): watching %s\n", dir);
+  	printf("[CGO] [INFO] WatchDirectory(): watching %s", dir);
   	for (;;) {
     	numRead = read(inotifyFd, buf, BUF_LEN);
     	if (numRead == 0) {

@@ -154,7 +154,7 @@ func fileDebug(lvl string, msg string) {
 }
 
 func fileChangeNotifier(absoluteFilePath string, action event.ActionType) {
-	fileDebug("DEBUG", fmt.Sprintf("file [%s], action [%s]\n", absoluteFilePath, ActionToString(action)))
+	fileDebug("DEBUG", fmt.Sprintf("file [%s], action [%s]", absoluteFilePath, ActionToString(action)))
 	// notification event is registered for this path, wait for 5 secs
 	wait, exists := watcher.LookupForFileNotification(absoluteFilePath)
 	if exists {
