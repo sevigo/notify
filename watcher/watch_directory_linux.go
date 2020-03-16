@@ -56,7 +56,7 @@ func (w *DirectoryWatcher) StartWatching(root string, options *core.WatchingOpti
 			_, found := LookupForCallback(path)
 			if found {
 				fileDebug("INFO", fmt.Sprintf("directory [%s] is already watched", path))
-				return
+				return nil
 			}
 
 			ch := RegisterCallback(path)
@@ -65,6 +65,15 @@ func (w *DirectoryWatcher) StartWatching(root string, options *core.WatchingOpti
 			defer func() {
 				UnregisterCallback(path)
 				C.free(unsafe.Pointer(cpath))
+			}()
+
+			go func() {
+				for p := range ch {
+					if p.Stop {
+						fileError("ERROR", fmt.Errorf("StopWatching event is not implemented"))
+						return
+					}
+				}
 			}()
 
 			go watchDir(root, path)
