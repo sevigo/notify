@@ -9,7 +9,9 @@ import (
 	"github.com/sevigo/notify/event"
 )
 
+var ignoreFolders = map[string]bool{}
+
 func (i *DirectoryWatcher) StartWatching(root string, _ *core.WatchingOptions) {
 	time.Sleep(time.Second)
-	fileChangeNotifier(root+"/test.txt", event.FileAdded)
+	fileChangeNotifier(root+"/test.txt", event.FileAdded, nil)
 }

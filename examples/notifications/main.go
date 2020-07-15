@@ -2,17 +2,18 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"runtime"
+	"time"
 
 	"github.com/sevigo/notify"
 	"github.com/sevigo/notify/core"
+	"github.com/sevigo/notify/event"
 	"github.com/sevigo/notify/watcher"
 )
 
-var dirsWin = []string{"C:\\Users\\Igor\\Files"}
-var dirsLin = []string{"/home/igor/Downloads", "/home/igor/Documents"}
+var dirsWin = []string{"C:\\Users\\Igor"}
+var dirsLin = []string{"/home/igor"}
 
 func main() {
 	log.Println("Starting the service ...")
@@ -32,7 +33,10 @@ func main() {
 
 	for _, dir := range dirs {
 		go w.StartWatching(dir, &core.WatchingOptions{
-			Rescan: true,
+			Rescan:        true,
+			IgnoreFolders: []string{".vscode", ".atom", "AppData", "go", ".VirtualBox", ".git"},
+			IgnoreFiles:   []string{".xml", ".json", ".ini"},
+			AcceptFiles:   []string{".jpg"},
 		})
 	}
 	defer func() {
@@ -41,17 +45,26 @@ func main() {
 		}
 	}()
 
-	fmt.Println("wait for file change events ...")
-	// wait for file change events
+	log.Println("wait for file change events ...")
+	total := 0
+	var size int64
 	for {
 		select {
 		case ev := <-w.Event():
-			log.Printf("[EVENT] %s: %q", watcher.ActionToString(ev.Action), ev.Path)
+			if ev.Action == event.FileAdded {
+				total++
+				if ev.Size > 0 {
+					size = size + ev.Size
+				}
+				log.Printf("[EVENT] %s: %q", watcher.ActionToString(ev.Action), ev.Path)
+			}
 		case err := <-w.Error():
-			if err.Level == "ERROR" {
+			if err.Level == "CRITICAL" {
 				log.Printf("[%s] %s", err.Level, err.Message)
 			}
+		case <-time.After(3 * time.Second):
+			log.Printf("found %d files\nsize=%d GB\n", total, size/1024/1024/1024)
+			return
 		}
 	}
-
 }

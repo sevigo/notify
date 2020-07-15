@@ -19,12 +19,21 @@ func init() {
 	C.Setup()
 }
 
+// exclude these folders from the recursive scan
+var ignoreFolders = map[string]bool{
+	// $ sign indicates that the folder is hidden
+	`$Recycle.Bin`: true,
+	`$WinREAgent`:  true,
+	`$SysReset`:    true,
+}
+
 // StartWatching starts a CGO function for getting the notifications
 func (w *DirectoryWatcher) StartWatching(path string, options *core.WatchingOptions) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		fileError("CRITICAL", err)
+		fileError("CRITICAL", fmt.Errorf("can't start watching [%s]: %v", path, err))
 		return
 	}
+
 	_, found := LookupForCallback(path)
 	if found {
 		fileDebug("INFO", fmt.Sprintf("directory [%s] is already watched", path))
@@ -47,10 +56,12 @@ func (w *DirectoryWatcher) StartWatching(path string, options *core.WatchingOpti
 		}
 	}()
 
+	w.setOptions(path, options)
+
 	if options.Rescan {
 		err := w.scan(path)
 		if err != nil {
-			fileError("CRITICAL", err)
+			fileError("CRITICAL", fmt.Errorf("can't scan [%s]: %v", path, err))
 			return
 		}
 	}
@@ -68,7 +79,7 @@ func goCallbackFileChange(cpath, cfile *C.char, caction C.int) {
 	absoluteFilePath := filepath.Join(path, file)
 
 	if ok := checkValidFile(absoluteFilePath, action); ok {
-		fileChangeNotifier(absoluteFilePath, action)
+		fileChangeNotifier(absoluteFilePath, action, nil)
 	}
 }
 

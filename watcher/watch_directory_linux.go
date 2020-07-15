@@ -16,6 +16,8 @@ import (
 	"github.com/sevigo/notify/event"
 )
 
+var ignoreFolders = map[string]bool{}
+
 // #define IN_ACCESS		0x00000001	/* File was accessed */
 // #define IN_MODIFY		0x00000002	/* File was modified */
 // #define IN_ATTRIB		0x00000004	/* Metadata changed */
@@ -50,6 +52,7 @@ func (w *DirectoryWatcher) StartWatching(root string, options *core.WatchingOpti
 		fileError("CRITICAL", fmt.Errorf("cannot start watching [%s]: no such directory", root))
 		return
 	}
+	w.setOptions(root, options)
 	log.Printf("linux.StartWatching(): for [%s]", root)
 	err := filepath.Walk(root, func(path string, f os.FileInfo, err error) error {
 		if f.IsDir() {
@@ -109,5 +112,5 @@ func goCallbackFileChange(croot, cpath, cfile *C.char, caction C.int) {
 	file := strings.TrimSpace(C.GoString(cfile))
 	action := convertMaskToAction(int(caction))
 	absoluteFilePath := filepath.Join(path, file)
-	fileChangeNotifier(absoluteFilePath, action)
+	fileChangeNotifier(absoluteFilePath, action, nil)
 }
