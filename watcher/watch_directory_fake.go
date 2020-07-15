@@ -11,5 +11,5 @@ import (
 
 func (i *DirectoryWatcher) StartWatching(root string, _ *core.WatchingOptions) {
 	time.Sleep(time.Second)
-	fileChangeNotifier(root+"/test.txt", event.FileAdded)
+	fileChangeNotifier(root+"/test.txt", event.FileAdded, nil)
 }

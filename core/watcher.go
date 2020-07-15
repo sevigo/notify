@@ -5,7 +5,9 @@ import "github.com/sevigo/notify/event"
 type WatchingOptions struct {
 	Rescan        bool
 	ActionFilters []event.ActionType
-	FileFilters   []string
+	IgnoreFolders []string
+	IgnoreFiles   []string
+	AcceptFiles   []string
 }
 
 // DirectoryWatcher interface

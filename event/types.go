@@ -1,5 +1,7 @@
 package event
 
+import "time"
+
 // ActionType represents what happens with the file
 type ActionType int
 
@@ -10,6 +12,12 @@ type MetaInfo map[string]string
 type Event struct {
 	Action ActionType
 	Path   string
+	AdditionalInfo
+}
+
+type AdditionalInfo struct {
+	Size    int64
+	ModTime time.Time
 }
 
 const (
