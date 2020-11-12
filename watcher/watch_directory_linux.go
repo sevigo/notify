@@ -64,11 +64,6 @@ func (w *DirectoryWatcher) StartWatching(root string, options *core.WatchingOpti
 
 			ch := RegisterCallback(path)
 			fileDebug("INFO", fmt.Sprintf("start watching [%s]", path))
-			cpath := C.CString(path)
-			defer func() {
-				UnregisterCallback(path)
-				C.free(unsafe.Pointer(cpath))
-			}()
 
 			go func() {
 				for p := range ch {
@@ -100,6 +95,7 @@ func watchDir(rootDirToWatch string, subDir string) {
 	croot := C.CString(rootDirToWatch)
 	cdir := C.CString(subDir)
 	defer func() {
+		UnregisterCallback(subDir)
 		C.free(unsafe.Pointer(croot))
 		C.free(unsafe.Pointer(cdir))
 	}()

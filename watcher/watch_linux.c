@@ -19,7 +19,7 @@ void WatchDirectory(char* root, char* dir) {
 
   	inotifyFd = inotify_init();
   	if (inotifyFd == -1) {
-		printf("[ERROR] CGO: inotify_init()");
+		printf("[CGO] [ERROR] inotify_init()");
 		exit(-1);
    	}
 
@@ -33,18 +33,18 @@ void WatchDirectory(char* root, char* dir) {
   	for (;;) {
     	numRead = read(inotifyFd, buf, BUF_LEN);
     	if (numRead == 0) {
-			printf("[ERROR] CGO: read() from inotify fd returned 0!");
+			printf("[CGO] [ERROR]: read() from inotify fd returned 0!");
 			exit(-1);
 		}
 
     	if (numRead == -1) {
-			printf("[ERROR] CGO: read()");
+			printf("[CGO] [ERROR] read() from inotify fd returned -1");
 			exit(-1);
 		}
 
     	for (p = buf; p < buf + numRead; ) {
 			event = (struct inotify_event *) p;
-			printf("[INFO] CGO: file was changed: mask=%x, len=%d\n", event->mask, event->len);
+			printf("[CGO] [INFO] file was changed: %s %s\n", dir, event->name);
 			goCallbackFileChange(root, dir, event->name, event->mask);
 			p += sizeof(struct inotify_event) + event->len;
     	}
