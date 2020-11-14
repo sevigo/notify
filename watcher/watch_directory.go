@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sevigo/notify/core"
 	"github.com/sevigo/notify/event"
 )
 
@@ -28,19 +27,16 @@ func ActionToString(action event.ActionType) string {
 	}
 }
 
-// DirectoryWatcher ...
+// DirectoryWatcher represents a configuration for
+// a single directory to watch
 type DirectoryWatcher struct {
-	ignoreUserFolders map[string]map[string]bool
-	ignoreUserFiles   map[string]map[string]bool
-	acceptUserFiles   map[string]map[string]bool
-
 	events chan event.Event
 	errors chan event.Error
 
 	event.Waiter
 }
 
-// Options ...
+// Options represents global options for the notify
 type Options struct {
 }
 
@@ -57,9 +53,9 @@ var watchersCallbackMutex sync.Mutex
 var watchersCallback = make(map[string]chan Callback)
 
 func RegisterCallback(path string) chan Callback {
-	cb := make(chan Callback)
 	watchersCallbackMutex.Lock()
 	defer watchersCallbackMutex.Unlock()
+	cb := make(chan Callback)
 	watchersCallback[path] = cb
 	return cb
 }
@@ -82,11 +78,8 @@ func Create(ctx context.Context, callbackCh chan event.Event, errorCh chan event
 	once.Do(func() {
 		go processContext(ctx)
 		watcher = &DirectoryWatcher{
-			ignoreUserFiles:   make(map[string]map[string]bool),
-			ignoreUserFolders: make(map[string]map[string]bool),
-			acceptUserFiles:   make(map[string]map[string]bool),
-			events:            callbackCh,
-			errors:            errorCh,
+			events: callbackCh,
+			errors: errorCh,
 
 			Waiter: event.Waiter{
 				EventCh:  callbackCh,
@@ -106,71 +99,30 @@ func (w *DirectoryWatcher) Error() chan event.Error {
 	return w.errors
 }
 
-func (w *DirectoryWatcher) setOptions(path string, options *core.WatchingOptions) {
-	path = filepath.Clean(path)
-	if options != nil {
-		if len(options.IgnoreFiles) > 0 {
-			w.ignoreUserFiles[filepath.Clean(path)] = make(map[string]bool)
-			for _, file := range options.IgnoreFiles {
-				w.ignoreUserFiles[path][filepath.Clean(file)] = true
-			}
-		}
-
-		if len(options.IgnoreFolders) > 0 {
-			w.ignoreUserFolders[path] = make(map[string]bool)
-			for _, folder := range options.IgnoreFolders {
-				w.ignoreUserFolders[path][filepath.Clean(folder)] = true
-			}
-		}
-		// AcceptFiles wins over IgnoreFiles
-		if len(options.AcceptFiles) > 0 {
-			w.acceptUserFiles[path] = make(map[string]bool)
-			for _, file := range options.AcceptFiles {
-				w.acceptUserFiles[path][filepath.Clean(file)] = true
-			}
-		}
-	}
-}
-
 func (w *DirectoryWatcher) scan(path string) error {
+	path = filepath.Clean(path)
 	fileDebug("DEBUG", fmt.Sprintf("scan(): starting recursive scanning from root [%q]", path))
 	return filepath.Walk(path, func(absoluteFilePath string, fileInfo os.FileInfo, err error) error {
 		if fileInfo.IsDir() {
 			dir := fileInfo.Name()
-			if ignoreFolders[dir] || w.ignoreUserFolders[path][dir] {
+			if ignoreFolders[dir] {
 				fileDebug("DEBUG", fmt.Sprintf("dir [%s] is excluded from watching", absoluteFilePath))
 				return filepath.SkipDir
 			}
-
 			if os.IsPermission(err) {
 				fileDebug("DEBUG", fmt.Sprintf("dir [%s] is excluded from watching because of an error: %v", absoluteFilePath, err))
 				return filepath.SkipDir
 			}
 		}
-
 		if err != nil {
 			fileError("ERROR", fmt.Errorf("can't scan [%s]: %v", path, err))
 			return filepath.SkipDir
 		}
 		if !fileInfo.IsDir() {
-			ext := filepath.Ext(fileInfo.Name())
-			// acceptUserFiles wins over ignoreUserFiles
-			if len(w.acceptUserFiles[path]) > 0 {
-				if w.acceptUserFiles[path][ext] {
-					fileChangeNotifier(absoluteFilePath, event.FileAdded, &event.AdditionalInfo{
-						Size:    fileInfo.Size(),
-						ModTime: fileInfo.ModTime(),
-					})
-					return nil
-				}
-			} else {
-				if !w.ignoreUserFiles[path][ext] {
-					fileChangeNotifier(absoluteFilePath, event.FileAdded, &event.AdditionalInfo{
-						Size:    fileInfo.Size(),
-						ModTime: fileInfo.ModTime(),
-					})
-				}
-			}
+			fileChangeNotifier(absoluteFilePath, event.FileAdded, &event.AdditionalInfo{
+				Size:    fileInfo.Size(),
+				ModTime: fileInfo.ModTime(),
+			})
 		}
 		return nil
 	})
@@ -205,16 +157,19 @@ func (w *DirectoryWatcher) StopWatching(watchDirectoryPath string) {
 			Stop:  true,
 			Pause: false,
 		}
+		UnregisterCallback(watchDirectoryPath)
 	}
 }
 
 func fileError(lvl string, err error) {
-	// TODO: we can print out here if it is configured
+	// TODO: we can print to STDOUT here if this is globaly configured
+	// fmt.Printf("fileDebug(): [%s] %s\n", lvl, msg)
 	watcher.errors <- event.FormatError(lvl, err.Error())
 }
 
 func fileDebug(lvl string, msg string) {
-	// TODO: we can print out here if it is configured
+	// TODO: we can print to STDOUT here if this is globaly configured
+	// fmt.Printf("fileDebug(): [%s] %s\n", lvl, msg)
 	watcher.errors <- event.FormatError(lvl, msg)
 }
 

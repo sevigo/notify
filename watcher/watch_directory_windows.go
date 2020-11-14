@@ -44,7 +44,6 @@ func (w *DirectoryWatcher) StartWatching(path string, options *core.WatchingOpti
 	fileDebug("INFO", fmt.Sprintf("start watching [%s]", path))
 	cpath := C.CString(path)
 	defer func() {
-		UnregisterCallback(path)
 		C.free(unsafe.Pointer(cpath))
 	}()
 
@@ -55,8 +54,6 @@ func (w *DirectoryWatcher) StartWatching(path string, options *core.WatchingOpti
 			}
 		}
 	}()
-
-	w.setOptions(path, options)
 
 	if options.Rescan {
 		err := w.scan(path)
