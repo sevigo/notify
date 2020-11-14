@@ -3,6 +3,7 @@ package watcher_test
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -27,11 +28,9 @@ func init() {
 }
 
 func TestStartWatching(t *testing.T) {
-	watchPath := "testdata/"
+	watchPath := "testdata"
 	options := &core.WatchingOptions{
-		Rescan:        true,
-		IgnoreFiles:   []string{".html"},
-		IgnoreFolders: []string{"testdata/ignore"},
+		Rescan: true,
 	}
 	go directoryWatcher.StartWatching(watchPath, options)
 
@@ -44,8 +43,9 @@ func TestStartWatching(t *testing.T) {
 	}()
 	wg.Wait()
 
+	expectedDir := filepath.Join("testdata", "test.txt")
 	assert.Equal(t, "added", watcher.ActionToString(event.Action))
-	assert.Equal(t, "testdata/test.txt", event.Path)
+	assert.Equal(t, expectedDir, event.Path)
 	directoryWatcher.StopWatching(watchPath)
 }
 
@@ -58,11 +58,9 @@ func TestRescan(t *testing.T) {
 		wg.Done()
 	}()
 
-	watchPath := "testdata/"
+	watchPath := "testdata"
 	options := &core.WatchingOptions{
-		Rescan:        false,
-		IgnoreFiles:   []string{".html"},
-		IgnoreFolders: []string{"testdata/ignore"},
+		Rescan: false,
 	}
 	go directoryWatcher.StartWatching(watchPath, options)
 	// give StartWatching some time to do the initial work
@@ -70,7 +68,8 @@ func TestRescan(t *testing.T) {
 	directoryWatcher.RescanAll()
 
 	wg.Wait()
+	expectedDir := filepath.Join("testdata", "test.txt")
 	assert.Equal(t, "added", watcher.ActionToString(event.Action))
-	assert.Equal(t, "testdata/test.txt", event.Path)
+	assert.Equal(t, expectedDir, event.Path)
 	directoryWatcher.StopWatching(watchPath)
 }
