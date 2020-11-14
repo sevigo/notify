@@ -6,7 +6,6 @@ package watcher
 import "C"
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -52,8 +51,6 @@ func (w *DirectoryWatcher) StartWatching(root string, options *core.WatchingOpti
 		fileError("CRITICAL", fmt.Errorf("cannot start watching [%s]: no such directory", root))
 		return
 	}
-	w.setOptions(root, options)
-	log.Printf("linux.StartWatching(): for [%s]", root)
 	err := filepath.Walk(root, func(path string, f os.FileInfo, err error) error {
 		if f.IsDir() {
 			_, found := LookupForCallback(path)
@@ -61,20 +58,9 @@ func (w *DirectoryWatcher) StartWatching(root string, options *core.WatchingOpti
 				fileDebug("INFO", fmt.Sprintf("directory [%s] is already watched", path))
 				return nil
 			}
-
 			ch := RegisterCallback(path)
 			fileDebug("INFO", fmt.Sprintf("start watching [%s]", path))
-
-			go func() {
-				for p := range ch {
-					if p.Stop {
-						fileError("ERROR", fmt.Errorf("StopWatching event is not implemented"))
-						return
-					}
-				}
-			}()
-
-			go watchDir(root, path)
+			go watchDir(root, path, ch)
 		}
 		return nil
 	})
@@ -91,15 +77,20 @@ func (w *DirectoryWatcher) StartWatching(root string, options *core.WatchingOpti
 	}
 }
 
-func watchDir(rootDirToWatch string, subDir string) {
+func watchDir(rootDirToWatch string, subDir string, ch chan Callback) {
 	croot := C.CString(rootDirToWatch)
 	cdir := C.CString(subDir)
 	defer func() {
-		UnregisterCallback(subDir)
 		C.free(unsafe.Pointer(croot))
 		C.free(unsafe.Pointer(cdir))
 	}()
-	C.WatchDirectory(croot, cdir)
+	go C.WatchDirectory(croot, cdir)
+	for p := range ch {
+		if p.Stop {
+			fileError("INFO", fmt.Errorf("linux.watchDir() stop for %s", subDir))
+			return
+		}
+	}
 }
 
 //export goCallbackFileChange
