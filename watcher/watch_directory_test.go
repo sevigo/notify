@@ -3,6 +3,8 @@ package watcher_test
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -72,4 +74,34 @@ func TestRescan(t *testing.T) {
 	assert.Equal(t, "added", watcher.ActionToString(event.Action))
 	assert.Equal(t, expectedDir, event.Path)
 	directoryWatcher.StopWatching(watchPath)
+}
+
+func TestNotification(t *testing.T) {
+	var wg sync.WaitGroup
+	wg.Add(1)
+	var event event.Event
+	go func() {
+		event = <-directoryWatcher.Event()
+		wg.Done()
+	}()
+
+	watchPath := "testdata"
+	options := &core.WatchingOptions{
+		Rescan: false,
+	}
+	go directoryWatcher.StartWatching(watchPath, options)
+	// give StartWatching some time to do the initial work
+	time.Sleep(time.Second)
+
+	expectedDir := filepath.Join("testdata", "new.file")
+	err := ioutil.WriteFile(expectedDir, []byte("Hello"), 0755)
+	assert.NoError(t, err)
+
+	wg.Wait()
+	assert.Equal(t, "modified", watcher.ActionToString(event.Action))
+	assert.Equal(t, expectedDir, event.Path)
+	directoryWatcher.StopWatching(watchPath)
+
+	err = os.Remove(expectedDir)
+	assert.NoError(t, err)
 }

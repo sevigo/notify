@@ -10,5 +10,5 @@ mockgen: install-mockgen
 	${LOCAL_BIN}/mockgen -destination=mocks/mock_gen.go -package=mocks github.com/sevigo/notify/core DirectoryWatcher
 
 test:
-	go test -timeout 10s -cover ./...
-	CGO_ENABLED=0 go test -timeout 10s -tags fake -v
+	go test -timeout 30s -cover ./...
+	CGO_ENABLED=0 go test -timeout 30s -tags fake -v
