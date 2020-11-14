@@ -33,10 +33,7 @@ func main() {
 
 	for _, dir := range dirs {
 		go w.StartWatching(dir, &core.WatchingOptions{
-			Rescan:        true,
-			IgnoreFolders: []string{".vscode", ".atom", "AppData", "go", ".VirtualBox", ".git"},
-			IgnoreFiles:   []string{".xml", ".json", ".ini"},
-			AcceptFiles:   []string{".jpg"},
+			Rescan: true,
 		})
 	}
 	defer func() {
