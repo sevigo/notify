@@ -1,11 +1,9 @@
 name: Go
 on: [pull_request]
 jobs:
-  example-job:
+  build-job:
     runs-on: [ubuntu-latest, windows-latest]
-    build:
-      name: Build
-      steps:
+    steps:
       - name: Set up Go 1.13
         uses: actions/setup-go@v1
         with:
