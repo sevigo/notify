@@ -18,6 +18,8 @@ type Event struct {
 type AdditionalInfo struct {
 	Size    int64
 	ModTime time.Time
+	// used if file was renamed
+	OldName string
 }
 
 const (
