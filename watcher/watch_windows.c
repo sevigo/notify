@@ -97,7 +97,6 @@ void StopWatching(char *dir)
 		if (!WriteFile(pipe, dir, cbToWrite, &writtenSize, NULL))
 		{
 			printf("[CGO] [ERROR] StopWatching(): WriteFile failed (%d)\n", GetLastError());
-			// return;
 		}
 	}
 
@@ -151,7 +150,7 @@ void WatchDirectory(char *dir)
 		waitStatus = WaitForMultipleObjects(
 			INSTANCES, // number of event objects
 			handles,   // array of event objects
-			FALSE,	 // does not wait for all
+			FALSE,	   // does not wait for all
 			INFINITE); // waits indefinitely
 
 		switch (waitStatus)

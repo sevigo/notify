@@ -20,8 +20,10 @@ func ActionToString(action event.ActionType) string {
 		return "removed"
 	case event.FileModified:
 		return "modified"
-	case event.FileRenamedOldName, event.FileRenamedNewName:
-		return "renamed"
+	case event.FileRenamedOldName:
+		return "renamedFrom"
+	case event.FileRenamedNewName:
+		return "renamedTo"
 	default:
 		return "invalid"
 	}
@@ -173,24 +175,28 @@ func fileDebug(lvl string, msg string) {
 	watcher.errors <- event.FormatError(lvl, msg)
 }
 
+var renameCnt uint64
+
 func fileChangeNotifier(absoluteFilePath string, action event.ActionType, info *event.AdditionalInfo) {
 	fileDebug("DEBUG", fmt.Sprintf("file [%s], action [%s]", absoluteFilePath, ActionToString(action)))
 	// notification event is registered for this path, wait for 5 secs
-	wait, exists := watcher.LookupForFileNotification(absoluteFilePath)
-	if exists {
-		wait <- true
-		return
-	}
-	watcher.RegisterFileNotification(absoluteFilePath)
-
 	data := &event.Event{
 		Path:   absoluteFilePath,
 		Action: action,
 	}
+
+	fileNotificationKey := absoluteFilePath
+	wait, exists := watcher.LookupForFileNotification(fileNotificationKey)
+	if exists {
+		wait <- *data
+		return
+	}
+	watcher.RegisterFileNotification(fileNotificationKey)
 	if info != nil {
 		data.Size = info.Size
 		data.ModTime = info.ModTime
+		data.OldName = info.OldName
 	}
 
-	go watcher.Wait(data)
+	go watcher.Wait(fileNotificationKey, data)
 }

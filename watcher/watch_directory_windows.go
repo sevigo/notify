@@ -9,14 +9,18 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/sevigo/notify/core"
 	"github.com/sevigo/notify/event"
 )
 
+var eventCache chan event.Event
+
 func init() {
 	C.Setup()
+	eventCache = make(chan event.Event, 1)
 }
 
 // exclude these folders from the recursive scan
@@ -74,9 +78,20 @@ func goCallbackFileChange(cpath, cfile *C.char, caction C.int) {
 	action := event.ActionType(int(caction))
 
 	absoluteFilePath := filepath.Join(path, file)
-
-	if ok := checkValidFile(absoluteFilePath, action); ok {
-		fileChangeNotifier(absoluteFilePath, action, nil)
+	switch action {
+	case event.FileRenamedOldName:
+		go waitForRenameToEvent(absoluteFilePath)
+		return
+	case event.FileRenamedNewName:
+		eventCache <- event.Event{
+			Path:   absoluteFilePath,
+			Action: action,
+		}
+		return
+	default:
+		if ok := checkValidFile(absoluteFilePath, action); ok {
+			fileChangeNotifier(absoluteFilePath, action, nil)
+		}
 	}
 }
 
@@ -85,7 +100,24 @@ func checkValidFile(absoluteFilePath string, action event.ActionType) bool {
 	if action == event.FileRemoved {
 		return true
 	}
-	//we are checking this because windows tend to create some tmp files if this is a download files
+	// we are checking this because windows tend to create some tmp files if this is a download files
 	_, err := os.Stat(absoluteFilePath)
 	return err == nil
+}
+
+// we assuming that the FileRenamedOldName and FileRenamedNewName are fired together by win api
+func waitForRenameToEvent(oldPath string) {
+	for {
+		select {
+		case e := <-eventCache:
+			if e.Action == event.FileRenamedNewName {
+				newPath := e.Path
+				if ok := checkValidFile(newPath, e.Action); ok {
+					fileChangeNotifier(newPath, e.Action, &event.AdditionalInfo{OldName: oldPath})
+				}
+			}
+		case <-time.After(time.Second):
+			return
+		}
+	}
 }

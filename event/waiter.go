@@ -24,11 +24,11 @@ type Waiter struct {
 }
 
 var notificationsMutex sync.Mutex
-var notificationsChans = make(map[string]chan bool)
+var notificationsChans = make(map[string]chan Event)
 
 // RegisterFileNotification channel for a given file path, use this channel for with FileNotificationWaiter() function
 func (w *Waiter) RegisterFileNotification(path string) {
-	waitChan := make(chan bool)
+	waitChan := make(chan Event)
 	notificationsMutex.Lock()
 	defer notificationsMutex.Unlock()
 	notificationsChans[path] = waitChan
@@ -42,22 +42,27 @@ func (w *Waiter) UnregisterFileNotification(path string) {
 }
 
 // LookupForFileNotification returns a channel for a given file path
-func (w *Waiter) LookupForFileNotification(path string) (chan bool, bool) {
+func (w *Waiter) LookupForFileNotification(path string) (chan Event, bool) {
 	notificationsMutex.Lock()
 	defer notificationsMutex.Unlock()
 	data, ok := notificationsChans[path]
 	return data, ok
 }
 
-// Wait will send fileData to the chan stored in CallbackData after 5 seconds if no signal is
-// received on waitChan.
+// Wait will send fileData to the chan stored in CallbackData after 5 seconds
+// if no signal is received on waitChan.
 // TODO: this can be done better with a general type of channel and any data
-func (w *Waiter) Wait(fileData *Event) {
-	waitChan, exists := w.LookupForFileNotification(fileData.Path)
+func (w *Waiter) Wait(fileNotificationKey string, fileData *Event) {
+	waitChan, exists := w.LookupForFileNotification(fileNotificationKey)
 	if !exists {
-		w.ErrorCh <- FormatError("ERROR", fmt.Sprintf("no notification if registered for the path %s", fileData.Path))
+		w.ErrorCh <- FormatError("ERROR", fmt.Sprintf("no notification if registered for the path %s", fileNotificationKey))
 		return
 	}
+	defer func() {
+		w.UnregisterFileNotification(fileNotificationKey)
+		close(waitChan)
+	}()
+
 	cnt := 0
 	for {
 		select {
@@ -65,14 +70,10 @@ func (w *Waiter) Wait(fileData *Event) {
 			cnt++
 			if cnt == w.MaxCount {
 				w.ErrorCh <- FormatError("ERROR", fmt.Sprintf("exit after %d times of notification for [%s]", w.MaxCount, fileData.Path))
-				w.UnregisterFileNotification(fileData.Path)
-				close(waitChan)
-				return
+				w.UnregisterFileNotification(fileNotificationKey)
 			}
 		case <-time.After(w.Timeout):
 			w.EventCh <- *fileData
-			w.UnregisterFileNotification(fileData.Path)
-			close(waitChan)
 			return
 		}
 	}
