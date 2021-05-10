@@ -82,8 +82,8 @@ func TestNotificationWaiter_RegisterFileNotification(t *testing.T) {
 				t.Errorf("LookupForFileNotification(): got %v, want %v", exists, false)
 			}
 
-			go w.Wait(tt.fileData)
-			waitChan <- true
+			go w.Wait(tt.fileData.Path, tt.fileData)
+			waitChan <- *tt.fileData
 			if tt.notificationExpected {
 				file := <-tt.fields.EventCh
 				if file.Path != tt.fileData.Path {

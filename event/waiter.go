@@ -66,7 +66,11 @@ func (w *Waiter) Wait(fileNotificationKey string, fileData *Event) {
 	cnt := 0
 	for {
 		select {
-		case <-waitChan:
+		case data := <-waitChan:
+			if data.Action == FileRenamedNewName {
+				// if we got file rename data, just send it
+				w.EventCh <- *&data
+			}
 			cnt++
 			if cnt == w.MaxCount {
 				w.ErrorCh <- FormatError("ERROR", fmt.Sprintf("exit after %d times of notification for [%s]", w.MaxCount, fileData.Path))
