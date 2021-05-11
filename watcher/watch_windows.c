@@ -184,7 +184,7 @@ void WatchDirectory(char *dir)
 				// FILE_ACTION_MODIFIED=0x00000003: The file was modified. This can be a change in the time stamp or attributes.
 				// FILE_ACTION_RENAMED_OLD_NAME=0x00000004: The file was renamed and this is the old name.
 				// FILE_ACTION_RENAMED_NEW_NAME=0x00000005: The file was renamed and this is the new name.
-				// printf("[CGO] [INFO] file=[%s] action=[%d]\n", fileName, fni->Action);
+				printf("[CGO] [INFO] file=[%s] action=[%d]\n", fileName, fni->Action);
 
 				goCallbackFileChange(dir, fileName, fni->Action);
 				memset(fileName, '\0', sizeof(fileName));

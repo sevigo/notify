@@ -1,5 +1,4 @@
 // +build windows,!integration,!fake
-
 package watcher
 
 // #include "watch_windows.h"
@@ -100,19 +99,28 @@ func checkValidFile(absoluteFilePath string, action event.ActionType) bool {
 	if action == event.FileRemoved {
 		return true
 	}
+	if action == event.FileRenamedOldName {
+		return true
+	}
 	// we are checking this because windows tend to create some tmp files if this is a download files
-	_, err := os.Stat(absoluteFilePath)
+	starts, err := os.Stat(absoluteFilePath)
+	if starts.IsDir() {
+		fmt.Printf("[notify] checkValidFile(): file %q is invalid\n", absoluteFilePath)
+		return false
+	}
 	return err == nil
 }
 
 // we assuming that the FileRenamedOldName and FileRenamedNewName are fired together by win api
 func waitForRenameToEvent(oldPath string) {
+	fmt.Printf("[notify] waitForRenameToEvent(): old name is %q\n", oldPath)
 	for {
 		select {
 		case e := <-eventCache:
 			if e.Action == event.FileRenamedNewName {
 				newPath := e.Path
 				if ok := checkValidFile(newPath, e.Action); ok {
+					fmt.Printf("[notify] waitForRenameToEvent(): new name is %q\n", oldPath)
 					fileChangeNotifier(newPath, e.Action, &event.AdditionalInfo{OldName: oldPath})
 				}
 			}
