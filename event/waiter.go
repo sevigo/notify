@@ -69,7 +69,8 @@ func (w *Waiter) Wait(fileNotificationKey string, fileData *Event) {
 		case data := <-waitChan:
 			if data.Action == FileRenamedNewName {
 				// if we got file rename data, just send it
-				w.EventCh <- *&data
+				w.EventCh <- data
+				return
 			}
 			cnt++
 			if cnt == w.MaxCount {
