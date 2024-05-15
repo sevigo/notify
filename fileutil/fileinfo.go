@@ -1,12 +1,15 @@
-package util
+package fileutil
 
 import (
 	"crypto/sha512"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"path"
+
+	"github.com/sevigo/notify/event"
 )
 
 // ContentType returns mime type of the file as a string
@@ -47,4 +50,24 @@ func Checksum(absoluteFilePath string) (string, error) {
 	}
 
 	return fmt.Sprintf("%x", h.Sum(nil)), nil
+}
+
+func CheckValidFile(absoluteFilePath string, action event.ActionType) (fs.FileInfo, error) {
+	// if the file is removed we are good and the event is valid
+	if action == event.FileRemoved {
+		return nil, nil
+	}
+	if action == event.FileRenamedOldName {
+		return nil, fmt.Errorf("FileRenamedOldName")
+	}
+
+	// we are checking this because windows tend to create some tmp files if this is a download files
+	starts, err := os.Stat(absoluteFilePath)
+	if err != nil {
+		return nil, err
+	}
+	if starts.IsDir() {
+		return nil, fmt.Errorf("not a file")
+	}
+	return starts, nil
 }

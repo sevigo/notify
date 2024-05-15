@@ -10,8 +10,11 @@ import (
 	"github.com/sevigo/notify/watcher"
 )
 
-var dirsWin = []string{"C:\\Users\\Igor\\Files\\test"}
-var dirsLin = []string{"/home/igor"}
+var (
+	dirsWin = []string{"C:\\Users\\Igor\\Files\\test"}
+	dirsLin = []string{"/home/igor"}
+	dirsMac = []string{"/Users/igor.komlew/Downloads/xxx"}
+)
 
 func main() {
 	log.Println("Starting the service ...")
@@ -23,8 +26,10 @@ func main() {
 		dirs = dirsWin
 	case "linux":
 		dirs = dirsLin
+	case "darwin":
+		dirs = dirsMac
 	default:
-		panic("not supported OS")
+		panic("not supported OS: " + runtime.GOOS)
 	}
 
 	w := notify.Setup(ctx, &watcher.Options{})

@@ -175,8 +175,6 @@ func fileDebug(lvl string, msg string) {
 	watcher.errors <- event.FormatError(lvl, msg)
 }
 
-var renameCnt uint64
-
 func fileChangeNotifier(absoluteFilePath string, action event.ActionType, info *event.AdditionalInfo) {
 	fileDebug("DEBUG", fmt.Sprintf("file [%s], action [%s]", absoluteFilePath, ActionToString(action)))
 	// notification event is registered for this path, wait for 5 secs
