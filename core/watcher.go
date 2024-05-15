@@ -4,6 +4,7 @@ import "github.com/sevigo/notify/event"
 
 type WatchingOptions struct {
 	Rescan        bool
+	Recursive     bool
 	ActionFilters []event.ActionType
 }
 

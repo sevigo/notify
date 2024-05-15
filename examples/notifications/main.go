@@ -36,7 +36,8 @@ func main() {
 
 	for _, dir := range dirs {
 		go w.StartWatching(dir, &core.WatchingOptions{
-			Rescan: true,
+			Rescan:    true,
+			Recursive: true,
 		})
 	}
 	defer func() {
@@ -50,7 +51,6 @@ func main() {
 		select {
 		case ev := <-w.Event():
 			log.Printf("[EVENT] %s: %q", watcher.ActionToString(ev.Action), ev.Path)
-			log.Printf(">>> %+v\n", ev.AdditionalInfo)
 		case err := <-w.Error():
 			if err.Level == "CRITICAL" {
 				log.Printf("[%s] %s", err.Level, err.Message)
